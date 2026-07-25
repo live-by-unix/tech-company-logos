@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>AI Image Classifier</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background:#111;
+    color:white;
+    text-align:center;
+    padding:30px;
+}
+
+.container {
+    max-width:600px;
+    margin:auto;
+    background:#222;
+    padding:25px;
+    border-radius:15px;
+}
+
+input {
+    margin:20px;
+}
+
+img {
+    max-width:300px;
+    border-radius:10px;
+    display:none;
+    margin:auto;
+}
+
+button {
+    padding:12px 25px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    background:#4CAF50;
+    color:white;
+    font-size:16px;
+}
+
+.result {
+    margin-top:20px;
+    text-align:left;
+}
+
+.bar {
+    background:#333;
+    height:25px;
+    border-radius:10px;
+    overflow:hidden;
+    margin:8px;
+}
+
+.fill {
+    height:100%;
+    background:#4CAF50;
+    text-align:right;
+    padding-right:5px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>AI Image Classifier</h1>
+
+<p>Upload an image and let the model classify it.</p>
+
+<input type="file" id="imageUpload" accept="image/*">
+
+<img id="preview">
+
+<br>
+
+<button onclick="predict()">Analyze Image</button>
+
+<div class="result" id="result"></div>
+
+</div>
+
+
+<script>
+
+const MODEL_URL = 
+"https://teachablemachine.withgoogle.com/models/OM-qgDlNy/";
+
+let model;
+let imageElement=document.getElementById("preview");
+
+
+async function loadModel(){
+
+    model = await tmImage.load(
+        MODEL_URL + "model.json",
+        MODEL_URL + "metadata.json"
+    );
+
+    console.log("Model loaded");
+
+}
+
+
+document.getElementById("imageUpload")
+.addEventListener("change",function(e){
+
+    let file=e.target.files[0];
+
+    if(file){
+
+        imageElement.src = URL.createObjectURL(file);
+        imageElement.style.display="block";
+
+    }
+
+});
+
+
+async function predict(){
+
+    if(!model){
+        await loadModel();
+    }
+
+    if(!imageElement.src){
+        alert("Upload an image first");
+        return;
+    }
+
+
+    let prediction = await model.predict(imageElement);
+
+
+    prediction.sort((a,b)=>b.probability-a.probability);
+
+
+    let html="<h2>Results</h2>";
+
+
+    prediction.forEach(p=>{
+
+        let percent=(p.probability*100).toFixed(2);
+
+
+        html += `
+        <p>
+        ${p.className}: ${percent}%
+        </p>
+
+        <div class="bar">
+            <div class="fill" style="width:${percent}%">
+            </div>
+        </div>
+        `;
+
+    });
+
+
+    document.getElementById("result").innerHTML=html;
+
+}
+
+
+loadModel();
+
+</script>
+
+</body>
+</html>
